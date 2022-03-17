@@ -3,16 +3,18 @@
 
 package validator
 
-import "strings"
+import (
+	"strings"
+)
 
 // Validator is a general interface that allows a message to be validated.
 type Validator interface {
-	Validate() error
+	Validate(all bool) *MultiError
 }
 
-func CallValidatorIfExists(candidate interface{}) error {
+func CallValidatorIfExists(candidate interface{}) *MultiError {
 	if validator, ok := candidate.(Validator); ok {
-		return validator.Validate()
+		return validator.Validate(true)
 	}
 	return nil
 }
@@ -23,7 +25,7 @@ type fieldError struct {
 }
 
 func (f *fieldError) Error() string {
-	return "invalid field " + strings.Join(f.fieldStack, ".") + ": " + f.nestedErr.Error()
+	return strings.Join(f.fieldStack, ".") + " ;; " + f.nestedErr.Error()
 }
 
 // FieldError wraps a given Validator error providing a message call stack.
@@ -32,6 +34,7 @@ func FieldError(fieldName string, err error) error {
 		fErr.fieldStack = append([]string{fieldName}, fErr.fieldStack...)
 		return err
 	}
+
 	return &fieldError{
 		fieldStack: []string{fieldName},
 		nestedErr:  err,
