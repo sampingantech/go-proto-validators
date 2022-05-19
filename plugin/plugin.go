@@ -602,7 +602,7 @@ func (p *plugin) generateRepeatedCountValidator(variableName string, ccTypeName 
 		compareStr := fmt.Sprint(`if len(`, variableName, `) < `, fv.GetRepeatedCountMin(), ` {`)
 		p.P(compareStr)
 		p.In()
-		errorStr := " ; " + fmt.Sprint(fv.GetRepeatedCountMin())
+		errorStr := fmt.Sprint(fv.GetRepeatedCountMin())
 		p.generateErrorString(variableName, fieldName, BAD_REQ_COUNTMIN, errorStr, fv)
 		p.Out()
 		p.P(`}`)
@@ -611,7 +611,7 @@ func (p *plugin) generateRepeatedCountValidator(variableName string, ccTypeName 
 		compareStr := fmt.Sprint(`if len(`, variableName, `) > `, fv.GetRepeatedCountMax(), ` {`)
 		p.P(compareStr)
 		p.In()
-		errorStr := " ; " + fmt.Sprint(fv.GetRepeatedCountMax())
+		errorStr := fmt.Sprint(fv.GetRepeatedCountMax())
 		p.generateErrorString(variableName, fieldName, BAD_REQ_COUNTMAX, errorStr, fv)
 		p.Out()
 		p.P(`}`)
@@ -619,6 +619,16 @@ func (p *plugin) generateRepeatedCountValidator(variableName string, ccTypeName 
 }
 
 func (p *plugin) generateErrorString(variableName string, fieldName string, reason string, specificError string, fv *validator.FieldValidators) {
+
+	if reason == "BAD_REQ_COUNTMIN" || reason == "BAD_REQ_COUNTMAX" {
+		if fv.GetHumanError() == "" {
+			p.P(`multiError.Append("`, fieldName, `",`, p.validatorPkg.Use(), `.FieldError("`, reason, `",`, p.fmtPkg.Use(), ".Errorf(`", specificError, "`", `)))`)
+		} else {
+			p.P(`multiError.Append("`, fieldName, `",`, p.validatorPkg.Use(), `.FieldError("`, reason, `",`, p.fmtPkg.Use(), ".Errorf(`", fv.GetHumanError(), "`)))")
+		}
+		return
+	}
+
 	if fv.GetHumanError() == "" {
 		p.P(`multiError.Append("`, fieldName, `",`, p.validatorPkg.Use(), `.FieldError("`, reason, `",`, p.fmtPkg.Use(), ".Errorf(`%v", specificError, "`", `, `, variableName, `)))`)
 	} else {
