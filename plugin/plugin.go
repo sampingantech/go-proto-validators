@@ -105,6 +105,7 @@ func (p *plugin) Generate(file *generator.FileDescriptor) {
 			continue
 		}
 		p.generateRegexVars(file, msg)
+		p.generateRegexVarsForPassword(file,msg)
 		if gogoproto.IsProto3(file.FileDescriptorProto) {
 			p.generateProto3Message(file, msg)
 		} else {
@@ -179,6 +180,25 @@ func (p *plugin) generateRegexVars(file *generator.FileDescriptor, message *gene
 		}
 	}
 }
+
+//generate regex var for password
+func (p *plugin) generateRegexVarsForPassword(file *generator.FileDescriptor, message *generator.Descriptor) {
+	ccTypeName := generator.CamelCaseSlice(message.TypeName())
+	for _, field := range message.Field {
+		validator := getFieldValidatorIfAny(field)
+		if validator != nil {
+			fieldName := p.GetOneOfFieldName(message, field)
+			
+			if validator.IsPassword != nil {
+				p.P(`var `, p.regexName(ccTypeName, fieldName), `Upper = `, p.regexPkg.Use(), `.MustCompile("[A-Z]")`)
+				p.P(`var `, p.regexName(ccTypeName, fieldName), `Lower = `, p.regexPkg.Use(), `.MustCompile("[a-z]")`)
+				p.P(`var `, p.regexName(ccTypeName, fieldName), `Number = `, p.regexPkg.Use(), `.MustCompile("[0-9]")`)
+				p.P(`var `, p.regexName(ccTypeName, fieldName), `Special = `, p.regexPkg.Use(), `.MustCompile("[^0-9A-Za-z_]")`)
+			}
+		}
+	}
+}
+
 
 func (p *plugin) GetFieldName(message *generator.Descriptor, field *descriptor.FieldDescriptorProto) string {
 	fieldName := p.Generator.GetFieldName(message, field)
@@ -565,6 +585,7 @@ func getUUIDRegex(version *int32) (string, error) {
 	}
 }
 
+
 func (p *plugin) generateStringValidator(variableName string, ccTypeName string, fieldName string, fv *validator.FieldValidators) {
 	if fv.Regex != nil || fv.UuidVer != nil {
 		if fv.UuidVer != nil {
@@ -590,6 +611,41 @@ func (p *plugin) generateStringValidator(variableName string, ccTypeName string,
 		p.generateErrorString(variableName, fieldName, BAD_REQ_NOTEMPTY, errorStr, fv)
 		p.Out()
 		p.P(`}`)
+	}
+	if fv.IsPassword != nil {
+		p.P(`var `, p.regexName(ccTypeName, fieldName), `Match = 0`)
+		//check uppercase
+		p.P(`if `, p.regexName(ccTypeName, fieldName), `Upper.MatchString(`, variableName, `) {`)
+		p.In()
+		p.P(p.regexName(ccTypeName, fieldName),`Match++`)
+		p.Out()
+		p.P(`}`)
+		//check lowercase
+		p.P(`if `, p.regexName(ccTypeName, fieldName), `Lower.MatchString(`, variableName, `) {`)
+		p.In()
+		p.P(p.regexName(ccTypeName, fieldName),`Match++`)
+		p.Out()
+		p.P(`}`)
+		//check number 
+		p.P(`if `, p.regexName(ccTypeName, fieldName), `Number.MatchString(`, variableName, `) {`)
+		p.In()
+		p.P(p.regexName(ccTypeName, fieldName),`Match++`)
+		p.Out()
+		p.P(`}`)
+		//check special  
+		p.P(`if `, p.regexName(ccTypeName, fieldName), `Special.MatchString(`, variableName, `) {`)
+		p.In()
+		p.P(p.regexName(ccTypeName, fieldName),`Match++`)
+		p.Out()
+		p.P(`}`)
+		//check password is strong 
+		p.P(`if `, p.regexName(ccTypeName, fieldName), `Match < 3 || len(`,variableName,`) < 8 {`)
+		p.In()
+		errorStr := " Invalid Password"
+		p.generateErrorString(variableName, fieldName, BAD_REQ_PASSWORD, errorStr, fv)
+		p.Out()
+		p.P(`}`)
+
 	}
 	p.generateLengthValidator(variableName, ccTypeName, fieldName, fv)
 }

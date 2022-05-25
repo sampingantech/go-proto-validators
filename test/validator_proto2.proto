@@ -96,4 +96,9 @@ message ValidatorMessage {
 
 	// gogo embedded tests.
 	required EmbeddedMessage someGogoEmbedded = 46 [(gogoproto.embed) = true, (gogoproto.nullable) = false, (gogoproto.jsontag) = ",inline"];
+
+	//password test
+	optional string ValidPassword = 47 [(validator.fields) = {is_password: true}];
+	required string ValidPasswordReq = 48 [(validator.fields) = {is_password: true,string_not_empty: true}];
+
 }
