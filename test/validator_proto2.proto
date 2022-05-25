@@ -6,7 +6,7 @@ package validatortest;
 
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 import "github.com/sampingantech/go-proto-validators/validator.proto";
-option go_package = "./test";
+
 // Top-level enum type definition.
 enum EnumProto2 {
 	alpha2 = 0;
