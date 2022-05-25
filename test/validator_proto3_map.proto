@@ -3,7 +3,7 @@
 
 syntax = "proto3";
 package validatortest;
-
+option go_package = "./test";
 message ValueType {
   string something  = 1 ;
 }

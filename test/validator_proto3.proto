@@ -6,7 +6,7 @@ package validatortest;
 
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 import "github.com/sampingantech/go-proto-validators/validator.proto";
-
+option go_package = "./test";
 // Top-level enum type definition.
 enum EnumProto3 {
 	alpha3 = 0;
@@ -90,4 +90,6 @@ message ValidatorMessage3 {
 	EmbeddedEnum someEmbeddedEnum = 45 [(validator.fields) = {is_in_enum: true}];
 
 	EmbeddedMessage someGogoEmbedded = 46 [(gogoproto.embed) = true, (gogoproto.nullable) = false, (gogoproto.jsontag) = ",inline"];
+	//password test
+	string ValidPassword = 47 [(validator.fields) = {is_password: true}];
 }
